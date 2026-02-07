@@ -48,12 +48,23 @@ find_package(OpenMP QUIET)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
 
-# find_package(PythonLibs REQUIRED)
-# find_path(MATPLOTLIB_CPP_INCLUDE_DIRS "matplotlibcpp.h")
+find_package(PythonLibs REQUIRED)
+find_path(MATPLOTLIB_CPP_INCLUDE_DIRS "matplotlibcpp.h")
 
-# set(TBB_DIR "/usr/local/tbb-2019_U8")
-include("/opt/csg/slam/navs/src/M-detector/oneTBB-2019_U8/cmake/TBBBuild.cmake")
-tbb_build(TBB_ROOT "/opt/csg/slam/navs/src/M-detector/oneTBB-2019_U8" CONFIG_DIR TBB_DIR)
+# Use local oneTBB build
+# set(TBB_DIR "/home/xf/Desktop/catkin_ws/M-detector0206/src/M-detector/oneTBB-2019_U8/")
+# include("/home/xf/Desktop/catkin_ws/M-detector0206/src/M-detector/oneTBB-2019_U8/cmake/TBBBuild.cmake")
+# tbb_build(TBB_ROOT "/home/xf/Desktop/catkin_ws/M-detector0206/src/M-detector/oneTBB-2019_U8" CONFIG_DIR TBB_DIR)
+
+# ubuntu 22.04 with tbb installed via apt
+# find_package(TBB REQUIRED)
+# Use system TBB library
+set(TBB_LIBRARIES /usr/local/lib/libtbb.so /usr/local/lib/libtbbmalloc.so)
+set(TBB_INCLUDE_DIRS /usr/local/tbb-2019_U8/include)
+include_directories(${TBB_INCLUDE_DIRS})
+# target_link_libraries(xxx ${TBB_LIBRARIES})
+
+
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   nav_msgs
@@ -69,8 +80,17 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Eigen3 REQUIRED)
-find_package(PCL 1.8 REQUIRED)
-find_package(TBB REQUIRED)
+# Force use system PCL 1.12 (ROS version) instead of custom PCL 1.15
+# 必须使用系统安装的PCL 1.12版本，否则会出现链接错误，无法找到PCL库中的符号
+set(PCL_DIR "/usr/lib/x86_64-linux-gnu/cmake/pcl" CACHE PATH "" FORCE)
+find_package(PCL REQUIRED)
+# 打印PCL配置信息用于调试
+message(STATUS "PCL_VERSION: ${PCL_VERSION}")
+message(STATUS "PCL_INCLUDE_DIRS: ${PCL_INCLUDE_DIRS}")
+message(STATUS "PCL_LIBRARY_DIRS: ${PCL_LIBRARY_DIRS}")
+message(STATUS "TBB_LIBRARIES: ${TBB_LIBRARIES}")
+
+
 find_package(OpenCV REQUIRED)
 
 message(Eigen: ${EIGEN3_INCLUDE_DIR})
@@ -80,6 +100,7 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_DIRS}
+  ${TBB_INCLUDE_DIRS}
   include)
 
 generate_messages(
@@ -95,16 +116,18 @@ catkin_package(
 
 
 add_executable(dynfilter src/dynfilter_with_odom.cpp src/DynObjFilter.cpp src/DynObjCluster.cpp)
-target_link_libraries(dynfilter ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS} TBB::tbb)
+target_link_libraries(dynfilter ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES})
 target_include_directories(dynfilter PRIVATE ${PYTHON_INCLUDE_DIRS})
 
 add_executable(display_prediction src/display_prediction.cpp )
-target_link_libraries(display_prediction ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS} TBB::tbb)
+target_link_libraries(display_prediction ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES})
 target_include_directories(display_prediction PRIVATE ${PYTHON_INCLUDE_DIRS})
 
 
 add_executable(cal_recall src/cal_recall_multi.cpp)
-target_link_libraries(cal_recall ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS} TBB::tbb)
-target_include_directories(cal_recall PRIVATE ${PYTHON_INCLUDE_DIRS})
+target_link_libraries(cal_recall ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES})
+# target_include_directories(cal_recall PRIVATE ${PYTHON_INCLUDE_DIRS})
 
 
+add_executable(remove_dynamic src/remove_dynamic.cpp src/DynObjFilter.cpp src/DynObjCluster.cpp)
+target_link_libraries(remove_dynamic ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} ${OpenCV_LIBS} ${TBB_LIBRARIES})

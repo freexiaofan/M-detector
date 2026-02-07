@@ -101,8 +101,10 @@ void TimerCallback(const ros::TimerEvent& e)
 {
     if(buffer_pcs.size() > 0 && buffer_poss.size() > 0 && buffer_rots.size() > 0 && buffer_times.size() > 0)
     {
-        boost::shared_ptr<PointCloudXYZI> cur_pc = buffer_pcs.at(0);
+        boost::shared_ptr<PointCloudXYZI> cur_pc_boost = buffer_pcs.at(0);
         buffer_pcs.pop_front();
+        // Convert boost::shared_ptr to std::shared_ptr
+        PointCloudXYZI::Ptr cur_pc = std::make_shared<PointCloudXYZI>(*cur_pc_boost);
         auto cur_rot = buffer_rots.at(0);
         buffer_rots.pop_front();
         auto cur_pos = buffer_poss.at(0);

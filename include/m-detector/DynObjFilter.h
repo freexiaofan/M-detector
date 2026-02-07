@@ -40,12 +40,12 @@ using namespace cv;
 #define PI_MATH (3.141593f)
 #define HASH_P 116101
 #define MAX_N 100000
-#define MAX_2D_N       (564393) //1317755(1317755) //(50086) 39489912 // MAX_1D * MAX_1D_HALF
-#define MAX_1D         (1257) //(2095) //(317)  // 2*pi/ hor_resolution
-#define MAX_1D_HALF    (449) //3142() //158 31416 pi / ver_resolution
+#define MAX_2D_N       (2195560) // 2095 * 1048 = 2,195,560 // MAX_1D * MAX_1D_HALF  
+#define MAX_1D         (2095) // 2*pi/0.003 = 2094.4 (rounded) // 2*pi/ hor_resolution
+#define MAX_1D_HALF    (1048) // pi/0.003 = 1047.2 (rounded) // pi / ver_resolution
 #define DEPTH_WIDTH    (80 * 10)
 #define COE_SMALL   1000
-#define MAP_NUM     17 //30
+#define MAP_NUM     160  // 增大以匹配 max_depth_map_num=150
 #define HASH_PRIM   19 //37
 
 enum dyn_obj_flg {STATIC, CASE1, CASE2, CASE3, SELF, UNCERTAIN, INVALID};

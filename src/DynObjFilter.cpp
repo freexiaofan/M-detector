@@ -12,17 +12,17 @@
 void  DynObjFilter::init(ros::NodeHandle& nh)
 {
     nh.param<double>("dyn_obj/buffer_delay", buffer_delay, 0.1);
-    nh.param<int>("dyn_obj/buffer_size", buffer_size, 300000);
-    nh.param<int>("dyn_obj/points_num_perframe", points_num_perframe, 150000);
+    nh.param<int>("dyn_obj/buffer_size", buffer_size, 500000);
+    nh.param<int>("dyn_obj/points_num_perframe", points_num_perframe, 400000);
     nh.param<double>("dyn_obj/depth_map_dur", depth_map_dur, 0.2);
     nh.param<int>("dyn_obj/max_depth_map_num", max_depth_map_num, 5);
     nh.param<int>("dyn_obj/max_pixel_points", max_pixel_points, 50);
     nh.param<double>("dyn_obj/frame_dur", frame_dur, 0.1);
     nh.param<int>("dyn_obj/dataset", dataset, 0);
-    nh.param<float>("dyn_obj/self_x_f", self_x_f, 0.15f);
-    nh.param<float>("dyn_obj/self_x_b", self_x_b, 0.15f);
-    nh.param<float>("dyn_obj/self_y_l", self_y_l, 0.15f);
-    nh.param<float>("dyn_obj/self_y_r", self_y_r, 0.5f);
+    nh.param<float>("dyn_obj/self_x_f", self_x_f, 2.5f);
+    nh.param<float>("dyn_obj/self_x_b", self_x_b, 2.5f);
+    nh.param<float>("dyn_obj/self_y_l", self_y_l, 2.5f);
+    nh.param<float>("dyn_obj/self_y_r", self_y_r, 2.5f);
     nh.param<float>("dyn_obj/blind_dis", blind_dis, 0.15f);
     nh.param<float>("dyn_obj/fov_up", fov_up, 0.15f);
     nh.param<float>("dyn_obj/fov_down", fov_down, 0.15f);
@@ -180,6 +180,7 @@ void  DynObjFilter::filter(PointCloudXYZI::Ptr feats_undistort, const M3D & rot_
     time_search = time_research = time_search_0 = time_build = time_total = time_other0 = 0.0;
     time_interp1 = time_interp2 =0;
     int num_build = 0, num_search_0 = 0, num_research = 0;
+    std::cerr << __FILE__ << ":" << __LINE__ << " Start filtering..." << std::endl;
     if (feats_undistort == NULL) return;
     int size = feats_undistort->points.size();
     if (debug_en)
@@ -285,17 +286,17 @@ void  DynObjFilter::filter(PointCloudXYZI::Ptr feats_undistort, const M3D & rot_
             p[i].dyn = INVALID;
             dyn_tag_origin[i] = 0;
         }
-        else if (Case1(p[i]))
+        else if (depth_map_list.size() > 0 && Case1(p[i]))
         {
             p[i].dyn = CASE1;
             dyn_tag_origin[i] = 1;
         }
-        else if (Case2(p[i]))
+        else if (depth_map_list.size() > 0 && Case2(p[i]))
         {
             p[i].dyn = CASE2;
             dyn_tag_origin[i] = 1;
         } 
-        else if(Case3(p[i]))
+        else if(depth_map_list.size() > 0 && Case3(p[i]))
         {
             p[i].dyn = CASE3;
             dyn_tag_origin[i] = 1;
@@ -318,6 +319,7 @@ void  DynObjFilter::filter(PointCloudXYZI::Ptr feats_undistort, const M3D & rot_
         po_w.x = points[i]->glob[0];
         po_w.y = points[i]->glob[1];
         po_w.z = points[i]->glob[2];
+        po_w.intensity = points[i]->intensity;
         raw_points_world[i] = po;
         switch(points[i]->dyn)
         {
@@ -366,7 +368,7 @@ void  DynObjFilter::filter(PointCloudXYZI::Ptr feats_undistort, const M3D & rot_
                         po.normal_x = 0;
                         po.normal_y = points[i]->is_occu_times;
                         po.normal_z = points[i]->occu_times;
-                        po.intensity = (int) (points[i]->local.norm() * 10) + 10;
+                        po.intensity = points[i]->intensity;
                         laserCloudSteadObj_clus->push_back(po);
                         num_neag += 1;
                     }
@@ -392,7 +394,7 @@ void  DynObjFilter::filter(PointCloudXYZI::Ptr feats_undistort, const M3D & rot_
                         po.normal_x = 0;
                         po.normal_y = points[i]->is_occu_times;
                         po.normal_z = points[i]->occu_times;
-                        po.intensity = (int) (points[i]->local.norm() * 10) + 10;
+                        po.intensity = points[i]->intensity;
                         laserCloudSteadObj_clus->push_back(po);
                         num_neag += 1;
                     }
@@ -418,7 +420,7 @@ void  DynObjFilter::filter(PointCloudXYZI::Ptr feats_undistort, const M3D & rot_
                         po.normal_x = 0;
                         po.normal_y = points[i]->is_occu_times;
                         po.normal_z = points[i]->occu_times;
-                        po.intensity = (int) (points[i]->local.norm() * 10) + 10;
+                        po.intensity = points[i]->intensity;
                         laserCloudSteadObj_clus->push_back(po);
                         num_neag += 1;
                     }
@@ -456,7 +458,7 @@ void  DynObjFilter::filter(PointCloudXYZI::Ptr feats_undistort, const M3D & rot_
                         po.normal_x = 0;
                         po.normal_y = points[i]->is_occu_times;
                         po.normal_z = points[i]->occu_times;
-                        po.intensity = (int) (points[i]->local.norm() * 10) + 10;
+                        po.intensity = points[i]->intensity;
                         laserCloudSteadObj_clus->push_back(po);
                         num_neag += 1;
                     }
@@ -788,7 +790,9 @@ void DynObjFilter::CheckNeighbor(const point_soph & p, const DepthMap &map_info,
     {
         for (int j = -n; j <= n; j++)
         {
-            int cur_pos = (p.hor_ind + i) * MAX_1D_HALF + p.ver_ind + j;
+            int hor_idx = (p.hor_ind + i + MAX_1D) % MAX_1D;  // 确保非负
+            int ver_idx = (p.ver_ind + j + MAX_1D_HALF) % MAX_1D_HALF;  // 确保非负
+            int cur_pos = hor_idx * MAX_1D_HALF + ver_idx;
             if(cur_pos < MAX_2D_N && cur_pos >= 0 && map_info.depth_map[cur_pos].size() > 0)
             {
                 float cur_max_depth = map_info.max_depth_static[cur_pos];
@@ -913,7 +917,9 @@ bool  DynObjFilter::Case1MapConsistencyCheck(point_soph & p, const DepthMap &map
     {
         for (int ind_ver = -cur_map_cons_ver_num1; ind_ver <= cur_map_cons_ver_num1; ind_ver ++)
         {   
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF);
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;  // 确保非负
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;  // 确保非负
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx;
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = map_info.depth_map[pos_new];                        
             if (map_info.max_depth_static[pos_new] < p.vec(2) - cur_map_cons_min_thr1 || \
@@ -989,7 +995,9 @@ float DynObjFilter::DepthInterpolationStatic(point_soph & p, int map_index, cons
     {
         for (int ind_ver = -interp_ver_num; ind_ver <= interp_ver_num; ind_ver ++)
         {   
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF); 
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx; 
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = depth_map[pos_new];     
             for (int j = 0; j < points_in_pixel.size(); j ++)
@@ -1118,8 +1126,10 @@ bool  DynObjFilter::Case2(point_soph & p)
             for (int ind_hor = -occ_hor_num2; ind_hor <= occ_hor_num2; ind_hor ++)
             {
                 for (int ind_ver = -occ_ver_num2; ind_ver <= occ_ver_num2; ind_ver ++)
-                {   
-                    int pos_new = ((p_spherical.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p_spherical.ver_ind +ind_ver)%MAX_1D_HALF);       
+                {  
+                    int hor_idx = (p_spherical.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+                    int ver_idx = (p_spherical.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+                    int pos_new = hor_idx * MAX_1D_HALF + ver_idx;
                     if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
                     const vector<point_soph*> & points_in_pixel = depth_map_list[first_i]->depth_map[pos_new];                    
                     if (depth_map_list[first_i]->min_depth_all[pos_new] > p_spherical.vec(2))
@@ -1243,7 +1253,9 @@ bool  DynObjFilter::Case2MapConsistencyCheck(point_soph & p, const DepthMap &map
     {
         for (int ind_ver = -map_cons_ver_num2; ind_ver <= map_cons_ver_num2; ind_ver ++)  
         {
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF);
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx;
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = map_info.depth_map[pos_new];                         
             if (map_info.max_depth_all[pos_new] > p.vec(2) + cur_depth && \
@@ -1287,7 +1299,9 @@ bool  DynObjFilter::Case2SearchPointOccludingP(point_soph & p, const DepthMap &m
     {
         for (int ind_ver = -occ_ver_num2; ind_ver <= occ_ver_num2; ind_ver ++)
         {   
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF);         
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx;         
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = map_info.depth_map[pos_new];            
             if (map_info.min_depth_all[pos_new] > p.vec(2))
@@ -1347,7 +1361,9 @@ float DynObjFilter::DepthInterpolationAll(point_soph & p, int map_index, const D
     {
         for (int ind_ver = -interp_ver_num; ind_ver <= interp_ver_num; ind_ver ++)
         {   
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF);          
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx;          
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = depth_map[pos_new];           
             for (int j = 0; j < points_in_pixel.size(); j ++)
@@ -1435,7 +1451,9 @@ bool  DynObjFilter::Case2DepthConsistencyCheck(const point_soph & p, const Depth
     {
         for (int ind_ver = -depth_cons_ver_num2; ind_ver <= depth_cons_ver_num2; ind_ver ++)
         {   
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF); 
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx; 
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = map_info.depth_map[pos_new];
             for (int j = 0; j < points_in_pixel.size(); j ++)
@@ -1536,7 +1554,9 @@ bool  DynObjFilter::Case3(point_soph & p)
             {
                 for (int ind_ver = -occ_ver_num3; ind_ver <= occ_ver_num3; ind_ver ++)
                 {   
-                    int pos_new = ((p_spherical.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p_spherical.ver_ind +ind_ver)%MAX_1D_HALF);  
+                    int hor_idx = (p_spherical.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+                    int ver_idx = (p_spherical.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+                    int pos_new = hor_idx * MAX_1D_HALF + ver_idx;  
                     if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
                     const vector<point_soph*> & points_in_pixel = depth_map_list[first_i]->depth_map[pos_new];                   
                     if (depth_map_list[first_i]->max_depth_all[pos_new] < p_spherical.vec(2))
@@ -1662,7 +1682,9 @@ bool  DynObjFilter::Case3MapConsistencyCheck(point_soph & p, const DepthMap &map
     {
         for (int ind_ver = -map_cons_ver_num3; ind_ver <= map_cons_ver_num3; ind_ver ++)      
         {
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF);
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx;
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = map_info.depth_map[pos_new];                        
             if (map_info.max_depth_all[pos_new] > p.vec(2) + cur_depth && \
@@ -1707,7 +1729,9 @@ bool  DynObjFilter::Case3SearchPointOccludedbyP(point_soph & p, const DepthMap &
     {
         for (int ind_ver = -occ_ver_num3; ind_ver <= occ_ver_num3; ind_ver ++)
         {   
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF);                
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx;                
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = map_info.depth_map[pos_new];            
             if (map_info.min_depth_all[pos_new] > p.vec(2))
@@ -1762,7 +1786,9 @@ bool  DynObjFilter::Case3DepthConsistencyCheck(const point_soph & p, const Depth
     {
         for (int ind_ver = -depth_cons_ver_num3; ind_ver <= depth_cons_ver_num3; ind_ver ++)
         {   
-            int pos_new = ((p.hor_ind + ind_hor)%MAX_1D) * MAX_1D_HALF + ((p.ver_ind +ind_ver)%MAX_1D_HALF);      
+            int hor_idx = (p.hor_ind + ind_hor + MAX_1D) % MAX_1D;
+            int ver_idx = (p.ver_ind + ind_ver + MAX_1D_HALF) % MAX_1D_HALF;
+            int pos_new = hor_idx * MAX_1D_HALF + ver_idx;      
             if (pos_new < 0 || pos_new >= MAX_2D_N)  continue;
             const vector<point_soph*> & points_in_pixel = map_info.depth_map[pos_new];
             for (int j = 0; j < points_in_pixel.size(); j ++)

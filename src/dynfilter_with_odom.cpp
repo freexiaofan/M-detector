@@ -63,6 +63,13 @@ ros::Publisher pub_pcl_dyn, pub_pcl_dyn_extend, pub_pcl_std;
 
 void OdomCallback(const nav_msgs::Odometry &cur_odom)
 {
+    // static int count = 0;
+    // count++;
+    // if (count % 10 != 0)
+    // {
+    //     return;
+    // }
+    std::cout << "OdomCallbackh " << std::endl;
     Eigen::Quaterniond cur_q;
     geometry_msgs::Quaternion tmp_q;
     tmp_q = cur_odom.pose.pose.orientation;
@@ -89,11 +96,48 @@ void PoseCallback(const geometry_msgs::PoseStamped &cur_pose)
     buffer_times.push_back(lidar_end_time);
 }
 
+struct HesaiPointXYZIT
+{
+    PCL_ADD_POINT4D;
+    uint8_t intensity;
+    double timestamp = 0;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+POINT_CLOUD_REGISTER_POINT_STRUCT(HesaiPointXYZIT,
+                                  (float, x, x)(float, y, y)(float, z, z)(uint8_t, intensity, intensity)(double, timestamp, timestamp))
+
+
 void PointsCallback(const sensor_msgs::PointCloud2ConstPtr& msg_in)
 {
     boost::shared_ptr<PointCloudXYZI> feats_undistort(new PointCloudXYZI());
     pcl::fromROSMsg(*msg_in, *feats_undistort);
-    buffer_pcs.push_back(feats_undistort); 
+    buffer_pcs.push_back(feats_undistort);
+    return;
+
+    /*
+    pcl::PointCloud<HesaiPointXYZIT>::Ptr raw_pts(new pcl::PointCloud<HesaiPointXYZIT>());
+    pcl::fromROSMsg(*msg_in, *raw_pts);
+    for (size_t i = 0; i < raw_pts->size(); i++)
+    {
+        if( std::fabs(raw_pts->points[i].x) < 3.0 && std::fabs(raw_pts->points[i].y) < 3.0  )
+        {
+             continue;
+        }
+        PointType po;
+        po.x = raw_pts->points[i].x;
+        po.y = raw_pts->points[i].y;
+        po.z = raw_pts->points[i].z;
+        po.intensity = raw_pts->points[i].intensity;
+        feats_undistort->push_back(po);
+    }
+    feats_undistort->header.stamp = msg_in->header.stamp.toNSec() ; //   / 1000ull;
+    feats_undistort->header.frame_id = msg_in->header.frame_id;
+    feats_undistort->is_dense = msg_in->is_dense;
+    feats_undistort->width = feats_undistort->points.size();
+    feats_undistort->height = 1;
+    buffer_pcs.push_back(feats_undistort);
+    */
+
 }
 
 
@@ -101,8 +145,10 @@ void TimerCallback(const ros::TimerEvent& e)
 {
     if(buffer_pcs.size() > 0 && buffer_poss.size() > 0 && buffer_rots.size() > 0 && buffer_times.size() > 0)
     {
-        boost::shared_ptr<PointCloudXYZI> cur_pc = buffer_pcs.at(0);
+        boost::shared_ptr<PointCloudXYZI> cur_pc_boost = buffer_pcs.at(0);
         buffer_pcs.pop_front();
+        // Convert boost::shared_ptr to std::shared_ptr
+        PointCloudXYZI::Ptr cur_pc = std::make_shared<PointCloudXYZI>(*cur_pc_boost);
         auto cur_rot = buffer_rots.at(0);
         buffer_rots.pop_front();
         auto cur_pos = buffer_poss.at(0);
@@ -140,7 +186,7 @@ int main(int argc, char** argv)
 
     DynObjFilt->init(nh);    
     /*** ROS subscribe and publisher initialization ***/
-    pub_pcl_dyn_extend = nh.advertise<sensor_msgs::PointCloud2>("/m_detector/frame_out", 10000);  
+    pub_pcl_dyn_extend = nh.advertise<sensor_msgs::PointCloud2>("/m_detector/dynamic_frame_out", 10000);  
     pub_pcl_dyn = nh.advertise<sensor_msgs::PointCloud2> ("/m_detector/point_out", 100000);
     pub_pcl_std  = nh.advertise<sensor_msgs::PointCloud2> ("/m_detector/std_points", 100000);   
     ros::Subscriber sub_pcl = nh.subscribe(points_topic, 200000, PointsCallback);
