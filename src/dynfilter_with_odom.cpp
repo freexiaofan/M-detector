@@ -109,6 +109,8 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(HesaiPointXYZIT,
 
 void PointsCallback(const sensor_msgs::PointCloud2ConstPtr& msg_in)
 {
+    pcl::PointCloud<HesaiPointXYZIT>::Ptr raw_pts(new pcl::PointCloud<HesaiPointXYZIT>());
+    pcl::fromROSMsg(*msg_in, *raw_pts);
     boost::shared_ptr<PointCloudXYZI> feats_undistort(new PointCloudXYZI());
     pcl::fromROSMsg(*msg_in, *feats_undistort);
     buffer_pcs.push_back(feats_undistort);

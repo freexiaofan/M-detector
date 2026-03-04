@@ -98,7 +98,7 @@ void  DynObjFilter::init(ros::NodeHandle& nh)
     nh.param<bool>("dyn_obj/dyn_filter_en", dyn_filter_en, true);
     nh.param<bool>("dyn_obj/debug_publish", debug_en, true);
     nh.param<int>("dyn_obj/laserCloudSteadObj_accu_limit", laserCloudSteadObj_accu_limit, 5);
-    nh.param<float>("dyn_obj/voxel_filter_size", voxel_filter_size, 0.1f);
+    nh.param<float>("dyn_obj/voxel_filter_size", voxel_filter_size, 0.2f);
     nh.param<bool>("dyn_obj/cluster_coupled", cluster_coupled, false);
     nh.param<bool>("dyn_obj/cluster_future", cluster_future, false);
     nh.param<int>("dyn_obj/cluster_extend_pixel", Cluster.cluster_extend_pixel, 2);
